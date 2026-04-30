@@ -1,159 +1,150 @@
 """
-Force-directed graph visualization for the cascade result.
+Force-directed cascade graph rendered with Plotly.
 
-Renders an interactive HTML graph where:
-  - Node color encodes protocol type (stablecoin, LST, lending, etc.)
-  - Node size scales with TVL
-  - Node opacity scales with cascade-induced shock_pct (red ring around hit nodes)
-  - Edge thickness scales with the propagated shock that flowed through it
-  - Hover tooltips show TVL, blurb, and propagated impact
-
-Output is an HTML string that Streamlit embeds via components.html.
+We previously used pyvis but it has a fragile transitive dependency chain
+(jsonpickle / ipython) that breaks on newer Python interpreters in cloud
+environments. Plotly is shipped natively in Streamlit and renders a fully
+interactive network graph with hover tooltips and zoom/pan, all client-side.
 """
 
 from __future__ import annotations
 
 import math
 
-from pyvis.network import Network
+import networkx as nx
+import plotly.graph_objects as go
 
-from data.protocols import EDGES, PROTOCOLS, get_node_color, get_node_shape
+from data.protocols import EDGES, PROTOCOLS, NODE_TYPES, get_node_color
 
 
-def _size_from_tvl(tvl: float) -> float:
+def _node_size(tvl: float) -> float:
     if tvl <= 0:
-        return 12
-    return max(14, min(60, 8 * math.log10(tvl)))
+        return 14
+    return max(16, min(48, 7 * math.log10(tvl)))
 
 
-def _alpha_from_shock(shock_pct: float) -> str:
-    """Return a hex alpha component proportional to shock magnitude."""
-    if shock_pct <= 0:
-        return "33"  # faded
-    if shock_pct >= 10:
-        return "FF"
-    return f"{int(0x33 + (0xFF - 0x33) * (shock_pct / 10)):02X}"
+def _hex_to_rgba(hex_color: str, alpha: float = 1.0) -> str:
+    h = hex_color.lstrip("#")
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    return f"rgba({r},{g},{b},{alpha:.2f})"
 
 
-def render_cascade_graph(cascade_result: dict, height_px: int = 620) -> str:
-    net = Network(
-        height=f"{height_px}px",
-        width="100%",
-        bgcolor="#0d1117",
-        font_color="#e6edf3",
-        directed=True,
-        notebook=False,
-    )
+def render_cascade_graph(cascade_result: dict, height_px: int = 620) -> go.Figure:
+    G = nx.DiGraph()
+    for name, meta in PROTOCOLS.items():
+        G.add_node(name, type=meta["type"], tvl=meta["tvl_usd"])
+    for src, tgt, *_ in EDGES:
+        G.add_edge(src, tgt)
 
-    # Use a stable, readable layout
-    net.set_options("""
-    {
-      "physics": {
-        "forceAtlas2Based": {
-          "gravitationalConstant": -55,
-          "centralGravity": 0.012,
-          "springLength": 140,
-          "springConstant": 0.08,
-          "damping": 0.6,
-          "avoidOverlap": 0.7
-        },
-        "solver": "forceAtlas2Based",
-        "stabilization": { "iterations": 120 }
-      },
-      "edges": {
-        "smooth": { "type": "continuous" },
-        "color": { "inherit": false }
-      },
-      "interaction": {
-        "hover": true,
-        "tooltipDelay": 100,
-        "navigationButtons": false
-      }
-    }
-    """)
+    pos = nx.spring_layout(G, k=2.2, iterations=140, seed=42)
 
     impacts = cascade_result["impacts"]
     epicenter = cascade_result["epicenter"]
+    traversed_keys = {(t["source"], t["target"]): t for t in cascade_result["traversed"]}
 
-    # Add nodes
-    for name, meta in PROTOCOLS.items():
+    # ─── Edges ───────────────────────────────────────────────────────────
+    # Render in two passes: dim edges first, hot edges on top.
+    dim_x, dim_y = [], []
+    hot_traces = []
+
+    for src, tgt, exposure_usd, transmission, mechanism in EDGES:
+        x0, y0 = pos[src]
+        x1, y1 = pos[tgt]
+        traversal = traversed_keys.get((tgt, src))  # cascade flowed target→source
+
+        if traversal:
+            width = 1.5 + min(7, traversal["shock_pct"])
+            hot_traces.append(go.Scatter(
+                x=[x0, x1], y=[y0, y1],
+                mode="lines",
+                line=dict(color="#FF7B72", width=width),
+                hoverinfo="text",
+                hovertext=(f"<b>{src} → {tgt}</b><br>"
+                           f"Exposure: ${exposure_usd/1e6:.0f}M<br>"
+                           f"Transmission: {transmission*100:.0f}%<br>"
+                           f"<b>Propagated shock: {traversal['shock_pct']:.2f}%</b><br>"
+                           f"<i>{mechanism}</i>"),
+                showlegend=False,
+            ))
+        else:
+            dim_x += [x0, x1, None]
+            dim_y += [y0, y1, None]
+
+    dim_trace = go.Scatter(
+        x=dim_x, y=dim_y,
+        mode="lines",
+        line=dict(color="#30363d", width=0.8),
+        hoverinfo="skip",
+        showlegend=False,
+    )
+
+    # ─── Nodes ───────────────────────────────────────────────────────────
+    node_x, node_y = [], []
+    node_size, node_color, node_line_color, node_line_width = [], [], [], []
+    node_text, node_hover = [], []
+
+    for name in G.nodes():
+        x, y = pos[name]
+        node_x.append(x); node_y.append(y)
+        meta = PROTOCOLS[name]
         impact = impacts.get(name, {})
         shock_pct = impact.get("shock_pct", 0.0)
         loss_usd = impact.get("loss_usd", 0.0)
 
-        base_color = get_node_color(name)
         is_epicenter = name == epicenter
         is_hit = shock_pct > 0 and not is_epicenter
 
+        size = _node_size(meta["tvl_usd"]) * (1.5 if is_epicenter else 1.0)
+        node_size.append(size)
+        base = get_node_color(name)
+        node_color.append(_hex_to_rgba(base, 1.0) if (is_hit or is_epicenter) else _hex_to_rgba(base, 0.35))
+
         if is_epicenter:
-            border_color = "#FF4F4F"
-            border_width = 6
-            color_value = base_color
+            node_line_color.append("#FF4F4F"); node_line_width.append(4)
         elif is_hit:
-            border_color = "#FF7B72"
-            border_width = 1 + min(5, shock_pct / 2)
-            color_value = base_color
+            node_line_color.append("#FF7B72"); node_line_width.append(2)
         else:
-            border_color = "#30363d"
-            border_width = 1
-            color_value = base_color + "66"  # transparent for unhit
+            node_line_color.append("#30363d"); node_line_width.append(1)
 
-        size = _size_from_tvl(meta["tvl_usd"])
-        if is_epicenter:
-            size *= 1.4
-
-        title = (
-            f"<b style='font-size:14px;color:#fff'>{name}</b><br>"
-            f"<span style='color:#8b949e'>{meta['type'].upper()} · {meta.get('issuer', '')}</span><br>"
-            f"<b>TVL/Supply:</b> ${meta['tvl_usd']/1e9:.2f}B<br>"
-            f"<b>Cascade shock:</b> {shock_pct:.2f}%<br>"
-            f"<b>Est. loss:</b> ${loss_usd/1e6:.1f}M<br>"
-            f"<i style='color:#8b949e'>{meta.get('blurb','')[:160]}</i>"
+        node_text.append(name)
+        node_hover.append(
+            f"<b>{name}</b><br>"
+            f"<i>{meta['type'].upper()} · {meta.get('issuer','')}</i><br>"
+            f"TVL/Supply: ${meta['tvl_usd']/1e9:.2f}B<br>"
+            f"<b>Cascade shock: {shock_pct:.2f}%</b><br>"
+            f"<b>Est. loss: ${loss_usd/1e6:.1f}M</b><br>"
+            f"<span style='color:#8b949e'>{meta.get('blurb','')[:140]}</span>"
         )
 
-        net.add_node(
-            name,
-            label=name,
-            title=title,
-            color={"background": color_value, "border": border_color},
-            borderWidth=border_width,
-            size=size,
-            shape=get_node_shape(name),
-            font={"color": "#e6edf3", "size": 14, "face": "Inter, sans-serif"},
-        )
+    node_trace = go.Scatter(
+        x=node_x, y=node_y,
+        mode="markers+text",
+        marker=dict(
+            size=node_size, color=node_color,
+            line=dict(color=node_line_color, width=node_line_width),
+            opacity=1.0,
+        ),
+        text=node_text,
+        textposition="bottom center",
+        textfont=dict(color="#e6edf3", size=11, family="Inter, sans-serif"),
+        hoverinfo="text",
+        hovertext=node_hover,
+        showlegend=False,
+    )
 
-    # Add edges
-    traversed_keys = {(t["source"], t["target"]): t for t in cascade_result["traversed"]}
-    for src, tgt, exposure_usd, transmission, mechanism in EDGES:
-        # Note: cascade flows reverse direction — target's shock reaches source
-        # But the structural edge direction (source holds target) is what we draw.
-        traversal = traversed_keys.get((tgt, src))  # cascade direction is target→source
-        if traversal:
-            # This edge transmitted impact
-            color = "#FF7B72"
-            width = 1 + min(8, traversal["shock_pct"])
-            label = f"{traversal['shock_pct']:.1f}%"
-        else:
-            color = "#30363d"
-            width = 1.0
-            label = ""
-
-        title = (
-            f"<b>{src} → {tgt}</b><br>"
-            f"Exposure: ${exposure_usd/1e6:.0f}M<br>"
-            f"Transmission: {transmission*100:.0f}%<br>"
-            f"<i>{mechanism}</i>"
-        )
-
-        net.add_edge(
-            src,
-            tgt,
-            title=title,
-            color=color,
-            width=width,
-            arrows="to",
-            label=label,
-            font={"color": "#FF7B72", "size": 11, "background": "#0d1117"},
-        )
-
-    return net.generate_html(notebook=False)
+    fig = go.Figure(data=[dim_trace] + hot_traces + [node_trace])
+    fig.update_layout(
+        showlegend=False,
+        plot_bgcolor="#0d1117",
+        paper_bgcolor="#0d1117",
+        font=dict(color="#e6edf3", family="Inter, sans-serif"),
+        margin=dict(l=4, r=4, t=4, b=4),
+        height=height_px,
+        xaxis=dict(visible=False, showgrid=False, zeroline=False),
+        yaxis=dict(visible=False, showgrid=False, zeroline=False),
+        hoverlabel=dict(
+            bgcolor="#161b22", bordercolor="#30363d",
+            font=dict(color="#e6edf3", family="Inter, sans-serif", size=12),
+        ),
+    )
+    return fig

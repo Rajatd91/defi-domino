@@ -10,7 +10,6 @@ real propagation paths, and live TVL at risk.
 from __future__ import annotations
 
 import streamlit as st
-import streamlit.components.v1 as components
 import pandas as pd
 
 from core.cascade import simulate_cascade, rank_impacted, fmt_usd
@@ -27,8 +26,8 @@ def _cached_simulate(epicenter: str, shock_pct: float, tvl_signature: tuple) -> 
     return simulate_cascade(epicenter=epicenter, shock_pct=shock_pct)
 
 
-@st.cache_data(show_spinner=False)
-def _cached_graph_html(epicenter: str, shock_pct: float, tvl_signature: tuple) -> str:
+@st.cache_resource(show_spinner=False)
+def _cached_graph_fig(epicenter: str, shock_pct: float, tvl_signature: tuple):
     _ = tvl_signature
     result = simulate_cascade(epicenter=epicenter, shock_pct=shock_pct)
     return render_cascade_graph(result, height_px=620)
@@ -384,8 +383,8 @@ with col_graph:
     </div>
     """, unsafe_allow_html=True)
 
-    graph_html = _cached_graph_html(epicenter, shock_pct, tvl_sig)
-    components.html(graph_html, height=640, scrolling=False)
+    fig = _cached_graph_fig(epicenter, shock_pct, tvl_sig)
+    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 
 with col_ranked:

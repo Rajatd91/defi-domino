@@ -115,10 +115,12 @@ hr("4. Graph rendering")
 
 for k, s in list(SCENARIOS.items())[:3]:
     r = simulate_cascade(s["epicenter"], s["shock_pct"])
-    html = render_cascade_graph(r)
-    check(len(html) > 10_000, f"Graph for '{k}' renders >10KB of HTML")
-    check("<script" in html, f"Graph for '{k}' includes interactive script")
-    check(s["epicenter"] in html, f"Graph for '{k}' includes epicenter node label")
+    fig = render_cascade_graph(r)
+    check(len(fig.data) > 1, f"Graph for '{k}' has >1 plotly trace")
+    # Node trace should contain every protocol label
+    node_trace = fig.data[-1]
+    check(s["epicenter"] in node_trace.text,
+          f"Graph for '{k}' includes epicenter '{s['epicenter']}' as a node")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
