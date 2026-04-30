@@ -9,3 +9,9 @@ __pycache__/
 /tmp/
 .idea/
 .vscode/
+
+# Personal submission helpers — kept locally, not for the public repo
+SUBMISSION.md
+DEPLOY.md
+DEMO_VIDEO.md
+.claude/
