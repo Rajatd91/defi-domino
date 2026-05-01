@@ -44,27 +44,13 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-/* Hide menu and footer but keep header so the sidebar toggle stays clickable */
+/* Hide only the chrome we don't want. Leave the header alone so the sidebar
+   toggle that Streamlit ships natively keeps working. */
 #MainMenu { visibility: hidden; }
 footer { visibility: hidden; }
-
-/* Make the Streamlit Cloud toolbar / fork badge invisible */
 [data-testid="stToolbar"] { display: none !important; }
 [data-testid="stDecoration"] { display: none !important; }
 [data-testid="stStatusWidget"] { display: none !important; }
-
-/* Header: transparent so it blends into the dark theme but stays interactive */
-header[data-testid="stHeader"] {
-  background: transparent;
-}
-
-/* Sidebar: comfortable default width, resizable by dragging the right edge */
-section[data-testid="stSidebar"] {
-  min-width: 280px;
-  max-width: 460px;
-  resize: horizontal;
-  overflow: auto;
-}
 
 /* Tighten layout */
 .block-container { padding-top: 1.2rem; padding-bottom: 2rem; max-width: 1400px; }
