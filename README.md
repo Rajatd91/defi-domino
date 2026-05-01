@@ -81,8 +81,6 @@ The 39 edges and dollar exposures were assembled by hand from:
 - Pendle market lists
 - Governance forum risk reports (Gauntlet, Chaos Labs, Block Analitica)
 
-This was honestly the slowest part of the build.
-
 ## Run it locally
 
 ```bash
