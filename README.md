@@ -108,7 +108,7 @@ defi-domino/
 ├── app.py                          # Streamlit UI — the entry point
 ├── core/
 │   ├── cascade.py                  # BFS shock-propagation engine
-│   ├── visualizer.py               # pyvis force-directed graph rendering
+│   ├── visualizer.py               # Plotly force-directed graph rendering
 │   └── tvl_fetcher.py              # DefiLlama live TVL overlay
 ├── data/
 │   ├── protocols.py                # 24 protocols, 39 dependency edges
@@ -117,9 +117,6 @@ defi-domino/
 │   └── backtest.py                 # 70+ data-integrity & math checks
 ├── scripts/
 │   └── generate_architecture.py    # Re-builds the assets/ diagrams
-├── presentation/
-│   ├── DeFi_Domino_Pitch.pptx      # 8-slide pitch deck
-│   └── build_pptx.py               # Source for the deck
 ├── assets/                         # Architecture diagrams
 └── .streamlit/config.toml          # Dark theme
 ```
