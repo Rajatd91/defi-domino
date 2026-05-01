@@ -384,7 +384,16 @@ with col_graph:
     """, unsafe_allow_html=True)
 
     fig = _cached_graph_fig(epicenter, shock_pct, tvl_sig)
-    st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
+    st.plotly_chart(
+        fig,
+        use_container_width=True,
+        config={
+            "scrollZoom": True,
+            "displaylogo": False,
+            "modeBarButtonsToRemove": ["select2d", "lasso2d", "toggleSpikelines"],
+            "displayModeBar": True,
+        },
+    )
 
 
 with col_ranked:

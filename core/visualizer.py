@@ -140,8 +140,9 @@ def render_cascade_graph(cascade_result: dict, height_px: int = 620) -> go.Figur
         font=dict(color="#e6edf3", family="Inter, sans-serif"),
         margin=dict(l=4, r=4, t=4, b=4),
         height=height_px,
-        xaxis=dict(visible=False, showgrid=False, zeroline=False),
-        yaxis=dict(visible=False, showgrid=False, zeroline=False),
+        xaxis=dict(visible=False, showgrid=False, zeroline=False, fixedrange=False),
+        yaxis=dict(visible=False, showgrid=False, zeroline=False, fixedrange=False, scaleanchor="x", scaleratio=1),
+        dragmode="pan",
         hoverlabel=dict(
             bgcolor="#161b22", bordercolor="#30363d",
             font=dict(color="#e6edf3", family="Inter, sans-serif", size=12),
