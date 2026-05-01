@@ -44,53 +44,30 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-/* Hide default Streamlit chrome we don't want */
-#MainMenu {visibility: hidden;}
-footer {visibility: hidden;}
+/* Hide menu and footer but keep header so the sidebar toggle stays clickable */
+#MainMenu { visibility: hidden; }
+footer { visibility: hidden; }
 
-/* Make the header transparent and minimal but keep the sidebar toggle accessible */
-header[data-testid="stHeader"] {
-  background: transparent;
-  height: 0;
-}
-header[data-testid="stHeader"] > div:first-child { display: none; }
+/* Make the Streamlit Cloud toolbar / fork badge invisible */
 [data-testid="stToolbar"] { display: none !important; }
 [data-testid="stDecoration"] { display: none !important; }
 [data-testid="stStatusWidget"] { display: none !important; }
 
-/* Sidebar: comfortable default width with a draggable resize handle */
+/* Header: transparent so it blends into the dark theme but stays interactive */
+header[data-testid="stHeader"] {
+  background: transparent;
+}
+
+/* Sidebar: comfortable default width, resizable by dragging the right edge */
 section[data-testid="stSidebar"] {
   min-width: 280px;
   max-width: 460px;
   resize: horizontal;
   overflow: auto;
 }
-section[data-testid="stSidebar"] > div:first-child { min-width: 280px; }
 
-/* Sidebar collapse/expand toggle: keep visible and styled */
-button[data-testid="stSidebarCollapseButton"],
-button[data-testid="collapsedControl"],
-[data-testid="baseButton-headerNoPadding"] {
-  background: #161b22 !important;
-  border: 1px solid #30363d !important;
-  border-radius: 6px !important;
-  color: #FF7B72 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-  position: fixed !important;
-  top: 0.7rem !important;
-  left: 0.7rem !important;
-  z-index: 999999 !important;
-}
-
-/* When sidebar is collapsed, let the main content take the full width */
-.block-container {
-  padding-top: 1.2rem;
-  padding-bottom: 2rem;
-  max-width: 1400px;
-  margin-left: auto;
-  margin-right: auto;
-}
+/* Tighten layout */
+.block-container { padding-top: 1.2rem; padding-bottom: 2rem; max-width: 1400px; }
 
 /* Hero */
 .hero {
