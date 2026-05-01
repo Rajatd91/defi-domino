@@ -47,37 +47,50 @@ st.markdown("""
 /* Hide default Streamlit chrome we don't want */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
-/* Keep the header bar visible so the sidebar collapse/expand toggle is always reachable,
-   but make it transparent so it blends with the dark theme. */
+
+/* Make the header transparent and minimal but keep the sidebar toggle accessible */
 header[data-testid="stHeader"] {
   background: transparent;
-  height: 2.5rem;
+  height: 0;
 }
+header[data-testid="stHeader"] > div:first-child { display: none; }
+[data-testid="stToolbar"] { display: none !important; }
+[data-testid="stDecoration"] { display: none !important; }
+[data-testid="stStatusWidget"] { display: none !important; }
 
-/* Sidebar: set a comfortable default width and let users drag to resize */
+/* Sidebar: comfortable default width with a draggable resize handle */
 section[data-testid="stSidebar"] {
-  min-width: 260px;
-  max-width: 480px;
+  min-width: 280px;
+  max-width: 460px;
   resize: horizontal;
   overflow: auto;
 }
-section[data-testid="stSidebar"] > div:first-child {
-  min-width: 260px;
-}
+section[data-testid="stSidebar"] > div:first-child { min-width: 280px; }
 
-/* Make the sidebar collapse/expand arrow always visible and obvious */
+/* Sidebar collapse/expand toggle: keep visible and styled */
 button[data-testid="stSidebarCollapseButton"],
-button[data-testid="collapsedControl"] {
+button[data-testid="collapsedControl"],
+[data-testid="baseButton-headerNoPadding"] {
   background: #161b22 !important;
   border: 1px solid #30363d !important;
   border-radius: 6px !important;
   color: #FF7B72 !important;
   opacity: 1 !important;
   visibility: visible !important;
+  position: fixed !important;
+  top: 0.7rem !important;
+  left: 0.7rem !important;
+  z-index: 999999 !important;
 }
 
-/* Tighten layout */
-.block-container {padding-top: 1.2rem; padding-bottom: 2rem; max-width: 1400px;}
+/* When sidebar is collapsed, let the main content take the full width */
+.block-container {
+  padding-top: 1.2rem;
+  padding-bottom: 2rem;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
 
 /* Hero */
 .hero {
