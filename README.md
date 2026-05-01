@@ -1,95 +1,89 @@
-<div align="center">
+# DeFi Domino
 
-# 🩸 DeFi Domino
+A stress-test simulator that maps how a failure at one DeFi protocol cascades through the rest of the ecosystem.
 
-### Protocol Contagion Risk Mapper
+**Live demo:** https://defi-domino.streamlit.app
 
-**Stress-test the entire DeFi ecosystem against any single-protocol failure.**
-
-[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
-[![Streamlit](https://img.shields.io/badge/Streamlit-1.40-FF4B4B?logo=streamlit&logoColor=white)](https://streamlit.io)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![Tests](https://img.shields.io/badge/backtests-70%2B%20passing-3FB950)](tests/backtest.py)
-
-[**Live Demo →**](https://defi-domino.streamlit.app) &nbsp;·&nbsp; [Methodology](#-methodology) &nbsp;·&nbsp; [Scenarios](#-scenarios-shipped) &nbsp;·&nbsp; [Architecture](#%EF%B8%8F-architecture)
-
-</div>
+![License: MIT](https://img.shields.io/badge/license-MIT-yellow.svg)
+![Python](https://img.shields.io/badge/python-3.11+-blue.svg)
+![Streamlit](https://img.shields.io/badge/streamlit-1.40-red.svg)
 
 ---
 
-## 🧩 The problem
+## Why I built this
 
-> *Terra → Anchor → 3AC → Celsius → Voyager.*
+Every big DeFi blow-up since 2022 (Terra, Anchor, 3AC, Celsius, the March 2023 USDC depeg) followed the same pattern: one protocol or asset breaks, and the real damage happens in the cascade through everything that depended on it.
 
-The 2022 collapses were predictable if anyone had mapped the on-chain dependencies between protocols. Every major DeFi failure since has followed the same pattern: a single asset depegs or a single protocol gets exploited, and the cascade through interconnected collateral, lending markets, AMMs, and yield protocols is what does the real damage.
+There are private contagion models for individual protocols (Gauntlet, Chaos Labs, Block Analitica) but they sit behind enterprise contracts. Nothing public lets a regular DeFi user pick a failure event and see the full blast radius.
 
-Internal risk firms like **Gauntlet, Chaos Labs, and Block Analitica** run private contagion models for individual protocols — locked behind $50K+/month enterprise contracts. **No public, retail-facing tool maps cross-protocol contagion in DeFi as a whole.**
+I wanted to build that, mostly because I wanted to understand the dependencies myself.
 
-DeFi Domino is that tool.
+## What it does
 
-## ✨ What it does
+Pick a failure scenario from the sidebar (or set up a custom one) and the engine simulates how the shock propagates across a graph of 24 protocols and 39 dependency edges.
 
-Pick a failure scenario — or build a custom one — and the cascade engine simulates how the shock propagates across the dependency graph.
+You get back:
 
-|  |  |
-|---|---|
-| **Total systemic loss** | Live $ figure across the whole ecosystem |
-| **Contagion graph** | Force-directed visualisation, edge thickness ∝ propagated shock |
-| **Ranked impact list** | Top-12 protocols hit, with the cascade path that reached them |
-| **Mechanism trace** | Hop-by-hop audit trail — every dollar figure is auditable |
-| **Live TVL overlay** | DefiLlama API refresh on demand |
+- Total systemic loss in dollars
+- Which protocols got hit and by how much
+- The cascade path, hop by hop
+- A force-directed graph where edge thickness is the propagated shock
+- Optional live TVL overlay from DefiLlama
 
-## 🗺️ Architecture
+## How it works
 
-<div align="center">
-  <img src="assets/system.png" alt="System architecture" width="800"/>
-</div>
-
-## 🌐 The dependency graph
-
-24 protocols. 39 hand-curated edges. Every exposure sourced from Aave reserve dashboards, MakerDAO PSM stats, Lido integration registries, EigenLayer LRT data, Pendle market lists, and governance forum risk reports from Gauntlet, Chaos Labs and Block Analitica.
-
-<div align="center">
-  <img src="assets/architecture.png" alt="Protocol dependency graph" width="900"/>
-</div>
-
-## 📐 Methodology
-
-For each edge from holder → held-asset, the cascade engine computes:
+For each edge from a protocol that *holds* an asset to the asset/protocol it depends on, the cascade engine computes:
 
 ```
-downstream_shock  =  upstream_shock × transmission × (exposure_usd / source_tvl) × damping^depth
+downstream_shock = upstream_shock * transmission * (exposure_usd / source_tvl) * damping^depth
 ```
 
-| Factor | What it captures |
+- `transmission` (0 to 1) accounts for buffers like over-collateralisation, insurance funds, and reserve diversification
+- `exposure / TVL` is the share of a protocol's balance sheet exposed to the upstream asset
+- `damping = 0.85` per hop stops runaway cycles in dense sub-graphs
+- BFS depth capped at 4 (enough for restaking -> LST -> lending -> yield chains)
+
+Propagation runs as a BFS from the epicenter. Each protocol's loss is `shock_pct * its_TVL`, summed across every protocol the cascade reaches.
+
+## What it doesn't model
+
+This is honest, not coy. The model handles structural first-order cascades reasonably. It does not model:
+
+- Reflexive panic flows
+- Oracle latency / liquidation lag
+- MEV during unwinds
+- Off-chain redemption queue dynamics
+
+These all tend to *amplify* the loss. So treat the numbers as a structural lower bound, not an upper bound.
+
+## Scenarios shipped
+
+| Scenario | Historical reference |
 |---|---|
-| `transmission` (0–1) | Real-world buffers — over-collateralization, insurance funds, partial reserve diversification |
-| `exposure / TVL` | The fraction of a protocol's balance sheet exposed to the upstream asset |
-| `damping = 0.85` | Per-hop decay; prevents runaway cycles in densely-connected sub-graphs |
-| BFS depth = 4 | Enough to trace LRT → LST → lending → yield chains |
-| Threshold = 0.05 % | Prunes vanishing impacts to keep the graph readable |
+| USDC Depeg | March 2023, USDC traded $0.87-$0.95 for 48h after SVB |
+| stETH Discount Widens | June 2022, stETH/ETH bottomed near 0.935 during 3AC unwind |
+| Tether Reserve Crisis | October 2018 banking-driven USDT discount |
+| EigenLayer Mass Slashing | April 2024 ezETH event (mechanism-adjacent) |
+| Ethena Negative Funding | Q2 2024 funding compression |
+| Aave V3 Critical Exploit | Hypothetical, modelled on Cream / Euler |
+| Curve 3pool Drain | July 2023 Vyper compiler exploit ($73M) |
 
-### What it models well
-First-order liquidation cascades, collateral re-pricing, PSM/AMM imbalances, multi-hop LRT → LST → lending market chains, EigenLayer → LRT slashing propagation.
+You can also pick any node as the epicenter and any shock magnitude in the custom override.
 
-### What it does not model (honest limitations)
-Reflexive panic flows, oracle latency, MEV during unwinds, off-chain redemption queue dynamics. These tend to *amplify* modelled losses — figures here should be read as a **structural lower bound**, not an upper bound.
+## Where the data came from
 
-## ⚡ Scenarios shipped
+The 39 edges and dollar exposures were assembled by hand from:
 
-| | Scenario | Historical reference |
-|---|---|---|
-| 🟢 | **USDC Depeg — SVB Repeat** | March 2023, USDC traded $0.87–$0.95 for 48h |
-| 🔵 | **stETH Discount Widens** | June 2022, stETH/ETH bottomed 0.935 during 3AC unwind |
-| 🟢 | **Tether Reserve Crisis** | October 2018, USDT traded $0.85 amid Bitfinex banking |
-| 🟪 | **EigenLayer Mass Slashing** | April 2024 ezETH depeg event (mechanism-adjacent) |
-| 💎 | **Ethena Sustained Negative Funding** | Q2 2024 funding compression |
-| 🟠 | **Aave V3 Critical Exploit** | Hypothetical — Cream / Euler reference |
-| 🟡 | **Curve 3pool Drain** | July 2023 Vyper compiler exploit ($73M) |
+- Aave reserve dashboards
+- MakerDAO PSM stats and DAI Stats
+- Lido integration registry
+- EigenLayer LRT data
+- Pendle market lists
+- Governance forum risk reports (Gauntlet, Chaos Labs, Block Analitica)
 
-Plus full custom mode — pick any node as epicenter and any shock magnitude.
+This was honestly the slowest part of the build.
 
-## 🚀 Quickstart
+## Run it locally
 
 ```bash
 git clone https://github.com/Rajatd91/defi-domino.git
@@ -99,44 +93,43 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
-Then open <http://localhost:8501>. Hit **Refresh TVL from DefiLlama** in the sidebar to overlay live TVL on the static baseline.
+Then open http://localhost:8501.
 
-## 🗂️ Repo layout
+## Repo layout
 
 ```
-defi-domino/
-├── app.py                          # Streamlit UI — the entry point
-├── core/
-│   ├── cascade.py                  # BFS shock-propagation engine
-│   ├── visualizer.py               # Plotly force-directed graph rendering
-│   └── tvl_fetcher.py              # DefiLlama live TVL overlay
-├── data/
-│   ├── protocols.py                # 24 protocols, 39 dependency edges
-│   └── scenarios.py                # 7 curated failure scenarios
-├── tests/
-│   └── backtest.py                 # 70+ data-integrity & math checks
-├── scripts/
-│   └── generate_architecture.py    # Re-builds the assets/ diagrams
-├── assets/                         # Architecture diagrams
-└── .streamlit/config.toml          # Dark theme
+app.py                         # Streamlit UI
+core/
+  cascade.py                   # BFS shock-propagation engine
+  visualizer.py                # Plotly graph rendering
+  tvl_fetcher.py               # DefiLlama TVL overlay
+data/
+  protocols.py                 # 24 protocols, 39 edges
+  scenarios.py                 # 7 failure scenarios
+tests/
+  backtest.py                  # 70+ data integrity & math checks
+scripts/
+  generate_architecture.py     # Builds the diagrams in assets/
+assets/                        # Architecture diagrams
+.streamlit/config.toml         # Dark theme
 ```
 
-## ✅ Backtest
+## Tests
 
 ```bash
 python3 tests/backtest.py
 ```
 
-70+ checks covering: data integrity (every edge endpoint exists), every preset scenario, every protocol as epicenter, edge cases (tiny shock / huge shock / leaf nodes), and a mass-conservation sanity bound (no protocol's loss can exceed its own TVL).
+70+ checks covering data integrity (every edge endpoint exists, every scenario references a real protocol), every preset scenario running without errors, every protocol working as an epicenter, edge cases (tiny shock, huge shock, leaf nodes), and a sanity bound that no protocol's loss can exceed its own TVL.
 
-## 🛣️ Roadmap
+## What I'd add next
 
-- [ ] Smart-contract-level oracle dependency edges (Chainlink, Pyth)
-- [ ] Per-chain L2 cascade splits (Arbitrum, Base)
-- [ ] Historical backtesting — replay the May 2022 / March 2023 cascades
-- [ ] Webhook alerts when DefiLlama-live TVL crosses risk thresholds
-- [ ] Solvency stress tests for restaking AVS slashing bounds
+- Smart-contract-level oracle dependency edges (Chainlink, Pyth)
+- Per-chain L2 cascade splits (Arbitrum, Base)
+- Replay the May 2022 and March 2023 cascades against the model and check it
+- Webhook alerts when live TVL crosses risk thresholds
+- AVS slashing bound stress tests for restaking
 
-## 📜 License
+## License
 
-[MIT](LICENSE) © 2026 Rajat Durge
+MIT, 2026 Rajat Durge.

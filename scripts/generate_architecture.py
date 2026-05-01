@@ -2,8 +2,8 @@
 Generate static architecture diagrams for the README.
 
 Produces:
-  - assets/architecture.png   — the protocol dependency graph (network)
-  - assets/system.png         — the layered system diagram
+  - assets/architecture.png   - the protocol dependency graph (network)
+  - assets/system.png         - the layered system diagram
 """
 
 import os
@@ -131,7 +131,7 @@ def build_protocol_graph_png():
     # Title
     fig.text(
         0.5, 0.96,
-        "DeFi Domino — 24-Protocol Dependency Graph",
+        "DeFi Domino - 24-Protocol Dependency Graph",
         fontsize=18, color=TEXT, weight="bold",
         ha="center", family="sans-serif",
     )
@@ -215,7 +215,7 @@ def build_system_diagram_png():
         ax.annotate("", xy=(6, y - 0.18), xytext=(6, y + 0.07),
                     arrowprops=dict(arrowstyle="->", color=MUTED, lw=1.5))
 
-    fig.text(0.5, 0.96, "DeFi Domino — System Architecture",
+    fig.text(0.5, 0.96, "DeFi Domino - System Architecture",
              fontsize=18, color=TEXT, weight="bold",
              ha="center", family="sans-serif")
 

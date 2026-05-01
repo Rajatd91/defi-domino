@@ -1,5 +1,5 @@
 """
-DeFi Domino — Protocol Contagion Risk Mapper
+DeFi Domino - Protocol Contagion Risk Mapper
 Encode Club DeFi Mini Hack 2026 submission.
 
 Maps the dependency graph of the top 25 DeFi protocols and simulates
@@ -34,7 +34,7 @@ def _cached_graph_fig(epicenter: str, shock_pct: float, tvl_signature: tuple):
 
 
 st.set_page_config(
-    page_title="DeFi Domino — Contagion Risk Mapper",
+    page_title="DeFi Domino - Contagion Risk Mapper",
     page_icon="🩸",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -215,13 +215,12 @@ header {visibility: hidden;}
 
 st.markdown("""
 <div class="hero">
-  <span class="tag">🩸 DeFi Systemic Risk · Cross-Protocol Stress Testing</span>
+  <span class="tag">DeFi systemic risk · cross-protocol stress testing</span>
   <h1>DeFi <span class="accent">Domino</span></h1>
   <div class="subtitle">
-    Terra → Anchor → 3AC → Celsius. The 2022 collapses were predictable
-    if anyone had mapped the dependencies. <b>DeFi Domino</b> is a stress-test simulator for
-    the entire DeFi ecosystem — pick a failure event, see exactly which protocols cascade,
-    and the dollar value at risk in real time.
+    Pick a failure event (a stablecoin depeg, a slashing wave, an exploit) and see how the shock
+    cascades across 24 protocols and 39 real exposure edges. Dollar value at risk, the propagation
+    path, and which protocols get hit, all computed live.
   </div>
 </div>
 """, unsafe_allow_html=True)
@@ -238,7 +237,7 @@ if "tvl_fetched" not in st.session_state:
 # --------------------------- Sidebar ---------------------------
 
 with st.sidebar:
-    st.markdown("### ⚡ Failure Scenario")
+    st.markdown("### Failure scenario")
 
     scenario_keys = list(SCENARIOS.keys())
     scenario_labels = [f"{SCENARIOS[k]['icon']} {SCENARIOS[k]['name']}" for k in scenario_keys]
@@ -252,7 +251,7 @@ with st.sidebar:
     scenario = SCENARIOS[scenario_key]
 
     st.markdown("---")
-    st.markdown("### 🔧 Custom Override")
+    st.markdown("### Custom override")
     custom_epicenter = st.selectbox(
         "Override epicenter",
         ["(use scenario)"] + sorted(PROTOCOLS.keys()),
@@ -267,8 +266,8 @@ with st.sidebar:
     )
 
     st.markdown("---")
-    st.markdown("### 📡 Live Data")
-    if st.button("🔄 Refresh TVL from DefiLlama", use_container_width=True):
+    st.markdown("### Live data")
+    if st.button("Refresh TVL from DefiLlama", use_container_width=True):
         with st.spinner("Fetching live TVL..."):
             st.session_state.live_tvls = fetch_all_live(PROTOCOLS, max_protocols=10)
             st.session_state.tvl_fetched = True
@@ -313,7 +312,7 @@ systemic_pct = (result["total_systemic_loss_usd"] / ecosystem_tvl) * 100 if ecos
 st.markdown(f"""
 <div class="metric-row">
   <div class="metric-card alert">
-    <div class="label">⚠️ Total Systemic Loss</div>
+    <div class="label">Total systemic loss</div>
     <div class="value">{fmt_usd(result['total_systemic_loss_usd'])}</div>
     <div class="delta">{systemic_pct:.2f}% of mapped DeFi TVL</div>
   </div>
@@ -344,15 +343,15 @@ if custom_epicenter == "(use scenario)":
       <div class="h">{scenario['icon']} Scenario · {scenario['name']}</div>
       <div><b>{scenario['tagline']}</b></div>
       <div style="margin-top:8px">{scenario['narrative']}</div>
-      <div class="historical">📜 Reference: {scenario['historical']}</div>
+      <div class="historical">Reference: {scenario['historical']}</div>
     </div>
     """, unsafe_allow_html=True)
 else:
     epi_meta = PROTOCOLS[epicenter]
     st.markdown(f"""
     <div class="narrative">
-      <div class="h">🔧 Custom Scenario</div>
-      <div><b>{epicenter}</b> ({epi_meta['type']}, issued by {epi_meta.get('issuer','—')}) loses {shock_pct:.1f}% of value.</div>
+      <div class="h">Custom scenario</div>
+      <div><b>{epicenter}</b> ({epi_meta['type']}, issued by {epi_meta.get('issuer','-')}) loses {shock_pct:.1f}% of value.</div>
       <div style="margin-top:8px">{epi_meta['blurb']}</div>
     </div>
     """, unsafe_allow_html=True)
@@ -427,7 +426,7 @@ st.markdown('<div class="section-h">Propagation Paths · Mechanism Trace</div>',
 st.markdown(
     "<div style='color:#8b949e;font-size:13px;margin-bottom:10px'>"
     "Every edge the shock traversed, in order of magnitude. This is the audit trail "
-    "behind the dollar figures above — each row corresponds to a real exposure documented "
+    "behind the dollar figures above - each row corresponds to a real exposure documented "
     "in protocol risk parameters."
     "</div>",
     unsafe_allow_html=True,
@@ -465,13 +464,13 @@ else:
 
 # --------------------------- Methodology ---------------------------
 
-with st.expander("📐 Methodology — how the cascade math works"):
+with st.expander("📐 Methodology - how the cascade math works"):
     st.markdown("""
 **Graph model.** Nodes are protocols, stablecoins, and asset types. Edges encode
 real exposures: *Aave V3 holds $5.4B of stETH as collateral*, *DAI holds $2.4B of USDC
 in the PSM*, *weETH backs $4.3B of stETH-equivalent restaked positions*. All exposure
 figures are sourced from protocol dashboards, governance forum risk reports
-(Gauntlet, Chaos Labs, Block Analitica), and DefiLlama 2024–2026.
+(Gauntlet, Chaos Labs, Block Analitica), and DefiLlama 2024-2026.
 
 **Shock propagation.** From the epicenter, we BFS across reverse edges (a protocol
 holding the shocked asset takes a hit). For each edge:
@@ -480,7 +479,7 @@ holding the shocked asset takes a hit). For each edge:
 downstream_shock = upstream_shock × transmission × (exposure_usd / source_tvl) × damping^depth
 ```
 
-- `transmission` (0–1): captures real-world buffers like overcollateralization,
+- `transmission` (0-1): captures real-world buffers like overcollateralization,
   insurance funds, or partial reserve diversification. A liquidation engine
   with 110% LTV has lower transmission than a 1:1 PSM.
 - `damping`: 0.85 per hop, prevents runaway cycles in densely connected sub-graphs.
@@ -491,7 +490,7 @@ direct PSM/AMM imbalances, multi-hop LRT → LST → lending market chains.
 
 **What this does not model.** Reflexive panic flows, oracle latency, MEV during
 unwinds, off-chain redemption queue dynamics. These tend to *amplify* the modelled
-losses — so figures here should be read as a structural lower bound.
+losses - so figures here should be read as a structural lower bound.
 
 **Data freshness.** Static TVL is the calibrated baseline. Click *Refresh TVL* to
 overlay live DefiLlama figures for the top protocols.
@@ -504,14 +503,14 @@ with st.expander("🗂️ Full protocol registry"):
         rows.append({
             "Protocol": name,
             "Type": meta["type"],
-            "Issuer": meta.get("issuer", "—"),
+            "Issuer": meta.get("issuer", "-"),
             "TVL / Supply": fmt_usd(meta["tvl_usd"]),
             "Description": meta.get("blurb", "")[:140] + ("..." if len(meta.get("blurb", "")) > 140 else ""),
         })
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True, height=400)
 
 
-with st.expander("🔗 Edge registry — every modelled exposure"):
+with st.expander("🔗 Edge registry - every modelled exposure"):
     edge_rows = []
     for src, tgt, exp, trans, mech in sorted(EDGES, key=lambda e: -e[2]):
         edge_rows.append({

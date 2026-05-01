@@ -176,7 +176,7 @@ PROTOCOLS = {
         "type": "dex",
         "tvl_usd": 200_000_000,
         "issuer": "Curve Finance",
-        "blurb": "USDC/USDT/DAI base pool. Foundation for ~80% of Curve metapools — depeg in any leg drains the others.",
+        "blurb": "USDC/USDT/DAI base pool. Foundation for ~80% of Curve metapools - depeg in any leg drains the others.",
     },
     "Curve stETH/ETH": {
         "type": "dex",
@@ -197,7 +197,7 @@ PROTOCOLS = {
         "type": "yield",
         "tvl_usd": 5_800_000_000,
         "issuer": "Pendle Finance",
-        "blurb": "Yield tokenisation. PT/YT priced off underlying — sUSDe and weETH PTs are concentration risks.",
+        "blurb": "Yield tokenisation. PT/YT priced off underlying - sUSDe and weETH PTs are concentration risks.",
         "defillama_slug": "pendle",
     },
     "Convex": {
@@ -227,7 +227,7 @@ EDGES = [
     ("DAI", "USDC", 2_400_000_000, 1.0,
      "PSM holds USDC 1:1 backing for ~45% of circulating DAI"),
     ("MakerDAO", "USDC", 2_400_000_000, 1.0,
-     "PSM module — direct USDC reserve"),
+     "PSM module - direct USDC reserve"),
 
     # ---- FRAX collateral ----
     ("FRAX", "USDC", 350_000_000, 0.95,
@@ -235,13 +235,13 @@ EDGES = [
 
     # ---- Aave V3 collateral exposures ----
     ("Aave V3", "USDC", 3_100_000_000, 0.85,
-     "USDC supply markets — depeg liquidates USDC-collateralised borrows"),
+     "USDC supply markets - depeg liquidates USDC-collateralised borrows"),
     ("Aave V3", "USDT", 2_200_000_000, 0.85,
      "USDT supply markets across chains"),
     ("Aave V3", "DAI", 800_000_000, 0.85,
      "DAI supply market"),
     ("Aave V3", "stETH", 5_400_000_000, 0.7,
-     "Largest single collateral type — wstETH/stETH e-mode"),
+     "Largest single collateral type - wstETH/stETH e-mode"),
     ("Aave V3", "weETH", 900_000_000, 0.7,
      "weETH e-mode collateral"),
 
@@ -303,11 +303,11 @@ EDGES = [
     ("Pendle", "weETH", 1_200_000_000, 0.95, "PT-weETH dominant LRT yield market"),
     ("Pendle", "stETH", 600_000_000, 0.95, "PT-stETH"),
     ("Pendle", "Aave V3", 350_000_000, 0.85,
-     "PT-aUSDC / PT-aaveUSDS markets — Aave-receipt-token tokenised yield"),
+     "PT-aUSDC / PT-aaveUSDS markets - Aave-receipt-token tokenised yield"),
 
     # ---- Spark structurally is MakerDAO ----
     ("Spark", "MakerDAO", 2_800_000_000, 1.0,
-     "Spark is operated by Sky (Maker) — full governance and treasury dependence"),
+     "Spark is operated by Sky (Maker) - full governance and treasury dependence"),
 
     # ---- Morpho curator vaults that route into Aave for liquidity floor ----
     ("Morpho", "Aave V3", 250_000_000, 0.6,
@@ -315,7 +315,7 @@ EDGES = [
 
     # ---- Convex direct exposure to Curve as a protocol ----
     ("Convex", "Curve 3pool", 220_000_000, 1.0,
-     "Boosted CRV emissions on 3pool LP — full pass-through on pool drain"),
+     "Boosted CRV emissions on 3pool LP - full pass-through on pool drain"),
 ]
 
 

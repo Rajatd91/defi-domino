@@ -1,5 +1,5 @@
 """
-Backtest suite — validates the cascade engine and data integrity.
+Backtest suite - validates the cascade engine and data integrity.
 
 Run: python3 -m tests.backtest
 """
@@ -137,7 +137,7 @@ r = simulate_cascade("USDC", 50.0)
 check(r["total_systemic_loss_usd"] > 0, "50% shock produces positive loss")
 print(f"  Huge shock (USDC 50%):  {r['protocols_affected']} affected, {fmt_usd(r['total_systemic_loss_usd'])}")
 
-# Leaf node (nothing depends on it) — try crvUSD which has 0 incoming edges as a target
+# Leaf node (nothing depends on it) - try crvUSD which has 0 incoming edges as a target
 r = simulate_cascade("crvUSD", 20.0)
 check(r["protocols_affected"] == 0 or r["protocols_affected"] >= 0, "Leaf node shock terminates cleanly")
 print(f"  Leaf node (crvUSD 20%): {r['protocols_affected']} affected (expected 0 for leaf)")
