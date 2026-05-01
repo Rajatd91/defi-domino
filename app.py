@@ -47,7 +47,34 @@ st.markdown("""
 /* Hide default Streamlit chrome we don't want */
 #MainMenu {visibility: hidden;}
 footer {visibility: hidden;}
-header {visibility: hidden;}
+/* Keep the header bar visible so the sidebar collapse/expand toggle is always reachable,
+   but make it transparent so it blends with the dark theme. */
+header[data-testid="stHeader"] {
+  background: transparent;
+  height: 2.5rem;
+}
+
+/* Sidebar: set a comfortable default width and let users drag to resize */
+section[data-testid="stSidebar"] {
+  min-width: 260px;
+  max-width: 480px;
+  resize: horizontal;
+  overflow: auto;
+}
+section[data-testid="stSidebar"] > div:first-child {
+  min-width: 260px;
+}
+
+/* Make the sidebar collapse/expand arrow always visible and obvious */
+button[data-testid="stSidebarCollapseButton"],
+button[data-testid="collapsedControl"] {
+  background: #161b22 !important;
+  border: 1px solid #30363d !important;
+  border-radius: 6px !important;
+  color: #FF7B72 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
 
 /* Tighten layout */
 .block-container {padding-top: 1.2rem; padding-bottom: 2rem; max-width: 1400px;}
